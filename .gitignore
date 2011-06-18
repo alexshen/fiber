@@ -1,0 +1,8 @@
+
+*.ncb
+*.suo
+*.user
+*.obj
+*.bak
+*.swp
+tags
