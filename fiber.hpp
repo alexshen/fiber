@@ -17,8 +17,9 @@ class fiber
         fs_not_run,
         fs_running,
         fs_switched_out,
-        fs_state_mask          = 0x3,
-        fs_convert_from_thread = 0x4
+        fs_dead,
+        fs_state_mask          = (1 << fs_dead) - 1,
+        fs_convert_from_thread
     };
 public:
     typedef void (*fiber_callback)(void*);
@@ -36,7 +37,7 @@ public:
 
 #ifdef ENABLE_MAKE_CURRENT_FIBER
     // switch to the new fiber without saving the current context
-    static void make_current_fiber(fiber& new_fiber);
+    static void make_current_fiber(fiber& curr, fiber& new_fiber);
 #endif
 private:
     fiber();

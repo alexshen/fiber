@@ -3,10 +3,10 @@
 #include <cstring>
 #include <cassert>
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__cygwin__)
 #  include <Windows.h>
 #else
-#  error Only win32 is supported
+#  error Unsupported platform
 #endif
 
 using namespace std;
@@ -33,11 +33,8 @@ fiber::~fiber()
 void fiber::switch_to(fiber& new_fiber)
 {
     // cannot switch to self or a running fiber
-    assert(new_fiber.get_state() != fs_running && this != &new_fiber);
+    assert(new_fiber.get_state() != fs_running && new_fiber.get_state() != fs_dead && this != &new_fiber);
     
-    if (this == &new_fiber || new_fiber.get_state() == fs_running)
-        return;
-
     // save the current context
     if (!setjmp(m_context))
     {
@@ -46,20 +43,23 @@ void fiber::switch_to(fiber& new_fiber)
         {
             new_fiber.set_state(fs_running);
             // since we've saved the context, it's safe to modify ebp and esp
-#ifdef _WIN32
-#  ifdef _MSC_VER
+#if defined(_WIN32) || defined(__cygwin__)
             // setup the stack for the new fiber
             char* stack_top = new_fiber.m_stack_top;
-            __asm {
-                mov esp, stack_top
-            }
+#  if defined(_MSC_VER)
+            _asm mov esp, stack_top
+#  elif defined(__GNUC__)
+            asm ("movl %0, %%esp"
+                :: "m"(stack_top)
+                :
+                );
 #  else
-#    error Only MSVC is supported for now
+#    error Unsupported compiler
 #  endif
             fiber_wrapper(&new_fiber);
             // never reach here
-#  else
-#    error Only win32 is supported for now
+#  else // !_WIN32
+#    error Unsupported platform
 #endif
         }
         else // if (new_fiber.m_state == fs_switched_out)
@@ -82,10 +82,10 @@ void fiber::fiber_wrapper( fiber* this_fiber )
     }
 
     // since the stack below is not correct, we can only exit the current thread.
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__cygwin__)
     ExitThread(0);
 #else
-#  error Only win32 is supported
+#  error Unsupported platform
 #endif
 }
 
@@ -100,11 +100,10 @@ fiber* fiber::convert_to_fiber()
 }
 
 #ifdef ENABLE_MAKE_CURRENT_FIBER
-void fiber::make_current_fiber(fiber& new_fiber)
+void fiber::make_current_fiber(fiber& curr, fiber& new_fiber)
 {
-    // create a temporary fiber to switch from 
-    fiber tmp;
-    tmp.switch_to(new_fiber);
+    curr.set_state(fs_dead);
+    fiber().switch_to(new_fiber);
 }
 #endif
 
@@ -193,9 +192,9 @@ fiber_t convert_to_fiber()
 }
 
 #ifdef ENABLE_MAKE_CURRENT_FIBER
-void make_current_fiber(fiber_t handle)
+void make_current_fiber(fiber_t curr, fiber_t handle)
 {
-    fiber::make_current_fiber(from_handle(handle));
+    fiber::make_current_fiber(from_handle(curr), from_handle(handle));
 }
 #endif
 

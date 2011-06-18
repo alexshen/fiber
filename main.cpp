@@ -28,10 +28,11 @@ void chainee_fiber_callback(void*)
 {
     printf("I'm chainee\n");
 #if defined(ENABLE_MAKE_CURRENT_FIBER) && defined(TEST_MAKE_CURRENT_FIBER)
-    fiber::make_current_fiber(*main_fiber);
+    fiber::make_current_fiber(*chainee_fiber, *main_fiber);
 #else
     chainee_fiber->switch_to(*main_fiber);
 #endif
+    printf("chainee done\n");
 }
 
 int main()

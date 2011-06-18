@@ -6,8 +6,11 @@ extern "C"
 {
 #endif
 
-//crash
-//#define ENABLE_MAKE_CURRENT_FIBER
+// Currently, make_current_fiber crashes on MSVC
+#ifndef _MSC_VER
+#  define ENABLE_MAKE_CURRENT_FIBER
+#endif
+
 #define FIBER_DEFAULT_STACK_SIZE (16 * 1024)
 
 // opaque type of fiber
@@ -43,11 +46,13 @@ fiber_t convert_to_fiber();
 
 #ifdef ENABLE_MAKE_CURRENT_FIBER
 /**
- * Make a fiber as the current fiber
+ * Make a fiber as the current fiber, do not save context for current fiber
+ * TODO: eliminate curr
  *
+ * @param curr   current running fiber
  * @param handle fiber to make as current
  */
-void make_currrent_fiber(fiber_t handle);
+void make_currrent_fiber(fiber_t curr, fiber_t handle);
 #endif
 
 /**

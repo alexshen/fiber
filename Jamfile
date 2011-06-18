@@ -1,0 +1,2 @@
+LINK = g++ ;
+Main fiber : fiber.cpp main.cpp ;
