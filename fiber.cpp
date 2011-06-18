@@ -43,9 +43,9 @@ void fiber::switch_to(fiber& new_fiber)
         {
             new_fiber.set_state(fs_running);
             // since we've saved the context, it's safe to modify ebp and esp
-#if defined(_WIN32) || defined(__cygwin__)
             // setup the stack for the new fiber
             char* stack_top = new_fiber.m_stack_top;
+#if defined(_X86_)
 #  if defined(_MSC_VER)
             _asm mov esp, stack_top
 #  elif defined(__GNUC__)
@@ -58,7 +58,7 @@ void fiber::switch_to(fiber& new_fiber)
 #  endif
             fiber_wrapper(&new_fiber);
             // never reach here
-#  else // !_WIN32
+#  else // !_X86_
 #    error Unsupported platform
 #endif
         }
