@@ -1,3 +1,15 @@
-LINK = g++ ;
 SubDirC++Flags -D_X86_ ;
-Main fiber : fiber.cpp main.cpp ;
+
+SRCS = fiber.cpp main.cpp ;
+if $(NT) || $(CYGWIN)
+{
+    SRCS += fiber_init_win32.cpp ;
+    if $(CYGWIN)
+    {
+        CC   = g++ ;
+        C++  = $(CC) ;
+        LINK = $(CC) ;
+    }
+}
+
+Main fiber : $(SRCS) ;

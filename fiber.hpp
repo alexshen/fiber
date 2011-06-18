@@ -49,6 +49,10 @@ private:
     void set_state(state new_state);
     state get_state() const;
 
+    // platform specific init
+    static void init_env(fiber& new_fiber);
+    static void exit_current_fiber();
+
     // the wrapper
     static void fiber_wrapper(fiber* this_fiber);
 private:

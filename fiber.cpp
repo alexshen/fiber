@@ -3,12 +3,6 @@
 #include <cstring>
 #include <cassert>
 
-#if defined(_WIN32) || defined(__cygwin__)
-#  include <Windows.h>
-#else
-#  error Unsupported platform
-#endif
-
 using namespace std;
 
 fiber::fiber(fiber_callback entry, void* arg, std::size_t stack_size /* = FIBER_DEFAULT_STACK_SIZE */)
@@ -44,23 +38,8 @@ void fiber::switch_to(fiber& new_fiber)
             new_fiber.set_state(fs_running);
             // since we've saved the context, it's safe to modify ebp and esp
             // setup the stack for the new fiber
-            char* stack_top = new_fiber.m_stack_top;
-#if defined(_X86_)
-#  if defined(_MSC_VER)
-            _asm mov esp, stack_top
-#  elif defined(__GNUC__)
-            asm ("movl %0, %%esp"
-                :: "m"(stack_top)
-                :
-                );
-#  else
-#    error Unsupported compiler
-#  endif
-            fiber_wrapper(&new_fiber);
+            init_env(new_fiber);
             // never reach here
-#  else // !_X86_
-#    error Unsupported platform
-#endif
         }
         else // if (new_fiber.m_state == fs_switched_out)
         {
@@ -82,11 +61,7 @@ void fiber::fiber_wrapper( fiber* this_fiber )
     }
 
     // since the stack below is not correct, we can only exit the current thread.
-#if defined(_WIN32) || defined(__cygwin__)
-    ExitThread(0);
-#else
-#  error Unsupported platform
-#endif
+    exit_current_fiber();
 }
 
 void fiber::chain(fiber& chainee)
