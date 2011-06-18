@@ -48,29 +48,16 @@ void fiber::switch_to(fiber& new_fiber)
             // since we've saved the context, it's safe to modify ebp and esp
 #ifdef _WIN32
 #  ifdef _MSC_VER
-#pragma pack(push, 1)
-            // thunk to call the 
-            struct thunk
-            {
-                BYTE  jmpcode;
-                DWORD offset;
-            } thk;
-#pragma pack(pop)
-
-            thk.jmpcode = 0xe9;
-            thk.offset  = reinterpret_cast<ptrdiff_t>(&fiber_wrapper) - (reinterpret_cast<ptrdiff_t>(&thk) + sizeof(thk));
-            FlushInstructionCache(GetCurrentProcess(), &thk, sizeof(thk));
             // setup the stack for the new fiber
             char* stack_top = new_fiber.m_stack_top;
             __asm {
                 mov esp, stack_top
             }
-
-            reinterpret_cast<void (*)(fiber*)>(&thk)(&new_fiber);
-            // never reach here
 #  else
 #    error Only MSVC is supported for now
 #  endif
+            fiber_wrapper(&new_fiber);
+            // never reach here
 #  else
 #    error Only win32 is supported for now
 #endif
@@ -112,7 +99,7 @@ fiber* fiber::convert_to_fiber()
     return new fiber();
 }
 
-#if 0
+#ifdef ENABLE_MAKE_CURRENT_FIBER
 void fiber::make_current_fiber(fiber& new_fiber)
 {
     // create a temporary fiber to switch from 
@@ -205,7 +192,7 @@ fiber_t convert_to_fiber()
     return fiber::convert_to_fiber();
 }
 
-#if 0
+#ifdef ENABLE_MAKE_CURRENT_FIBER
 void make_current_fiber(fiber_t handle)
 {
     fiber::make_current_fiber(from_handle(handle));

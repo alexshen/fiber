@@ -6,6 +6,8 @@ extern "C"
 {
 #endif
 
+//crash
+//#define ENABLE_MAKE_CURRENT_FIBER
 #define FIBER_DEFAULT_STACK_SIZE (16 * 1024)
 
 // opaque type of fiber
@@ -39,7 +41,7 @@ fiber_t create_fiber_user_stack(fiber_callback entry, void* arg, char* stack, un
  */
 fiber_t convert_to_fiber();
 
-#if 0
+#ifdef ENABLE_MAKE_CURRENT_FIBER
 /**
  * Make a fiber as the current fiber
  *

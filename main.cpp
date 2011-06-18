@@ -1,3 +1,5 @@
+#define TEST_MAKE_CURRENT_FIBER
+
 #include "fiber.hpp"
 #include <cstdio>
 #include <cstdlib>
@@ -25,8 +27,11 @@ void writer_fiber_callback(void* arg)
 void chainee_fiber_callback(void*)
 {
     printf("I'm chainee\n");
-    //fiber::make_current_fiber(*main_fiber);
+#if defined(ENABLE_MAKE_CURRENT_FIBER) && defined(TEST_MAKE_CURRENT_FIBER)
+    fiber::make_current_fiber(*main_fiber);
+#else
     chainee_fiber->switch_to(*main_fiber);
+#endif
 }
 
 int main()

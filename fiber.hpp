@@ -34,7 +34,7 @@ public:
     // You must delete the returned object after using
     static fiber* convert_to_fiber();
 
-#if 0
+#ifdef ENABLE_MAKE_CURRENT_FIBER
     // switch to the new fiber without saving the current context
     static void make_current_fiber(fiber& new_fiber);
 #endif
