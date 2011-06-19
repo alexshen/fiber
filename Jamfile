@@ -9,7 +9,8 @@ if $(UNIX)
     C++  = $(CC) ;
     LINK = $(CC) ;
 }
-if $(NT)
+
+if $(NT) || $(CYGWIN)
 {
     SRCS += fiber_impl_win32.cpp
             fiber_context.cpp
