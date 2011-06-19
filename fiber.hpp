@@ -13,14 +13,6 @@
 
 class fiber
 {
-    enum state {
-        fs_not_run,
-        fs_running,
-        fs_switched_out,
-        fs_dead,
-        fs_state_mask          = (1 << fs_dead) - 1,
-        fs_convert_from_thread
-    };
 public:
     typedef void (*fiber_callback)(void*);
 
@@ -35,23 +27,16 @@ public:
     // You must delete the returned object after using
     static fiber* convert_to_fiber();
 
-#ifdef ENABLE_MAKE_CURRENT_FIBER
     // switch to the new fiber without saving the current context
-    static void make_current_fiber(fiber& curr, fiber& new_fiber);
-#endif
+    static void make_current_fiber(fiber& new_fiber);
 private:
     fiber();
 
     void init(fiber_callback entry, void* arg, char* stack, std::size_t stack_size);
 
-    bool is_convert_from_thread() const;
-    void set_convert_from_thread(bool flag);
-    void set_state(state new_state);
-    state get_state() const;
-
     // platform specific init
     static void init_env(fiber& new_fiber);
-    static void exit_current_fiber();
+    static void exit_fiber();
 
     // the wrapper
     static void fiber_wrapper(fiber* this_fiber);
@@ -60,13 +45,11 @@ private:
     // stack is top-down
     char*          m_stack_bottom; // the bottom address of the stack
     char*          m_stack_top;    // the top address of the stack
-    std::size_t    m_stack_size;
     bool           m_free_stack;
 
     fiber_callback m_entry;
     void*          m_userarg;
     fiber*         m_chainee;
-    int            m_state;
 private:
     // disable copying
     fiber(fiber const&);

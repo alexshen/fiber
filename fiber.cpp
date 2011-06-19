@@ -17,7 +17,6 @@ fiber::fiber(fiber_callback entry, void* arg, char* stack, std::size_t stack_siz
 
 fiber::~fiber()
 {
-    assert(is_convert_from_thread() || get_state() != fs_running);
     if (m_free_stack)
     {
         delete[] m_stack_bottom;
@@ -26,34 +25,19 @@ fiber::~fiber()
 
 void fiber::switch_to(fiber& new_fiber)
 {
-    // cannot switch to self or a running fiber
-    assert(new_fiber.get_state() != fs_running && new_fiber.get_state() != fs_dead && this != &new_fiber);
-    
     // save the current context
     if (!setjmp(m_context))
     {
-        set_state(fs_switched_out);
-        if (new_fiber.get_state() == fs_not_run)
-        {
-            new_fiber.set_state(fs_running);
-            // since we've saved the context, it's safe to modify ebp and esp
-            // setup the stack for the new fiber
-            init_env(new_fiber);
-            // never reach here
-        }
-        else // if (new_fiber.m_state == fs_switched_out)
-        {
-            longjmp(new_fiber.m_context, 0);
-        }
-    }
-    else
-    {
-        set_state(fs_running);
+        longjmp(new_fiber.m_context, 0);
     }
 }
 
 void fiber::fiber_wrapper( fiber* this_fiber )
 {
+    // save the context and return
+    if (!setjmp(this_fiber->m_context))
+        return;
+
     this_fiber->m_entry(this_fiber->m_userarg);
     if (this_fiber->m_chainee)
     {
@@ -61,7 +45,7 @@ void fiber::fiber_wrapper( fiber* this_fiber )
     }
 
     // since the stack below is not correct, we can only exit the current thread.
-    exit_current_fiber();
+    exit_fiber();
 }
 
 void fiber::chain(fiber& chainee)
@@ -74,18 +58,21 @@ fiber* fiber::convert_to_fiber()
     return new fiber();
 }
 
-#ifdef ENABLE_MAKE_CURRENT_FIBER
-void fiber::make_current_fiber(fiber& curr, fiber& new_fiber)
+void fiber::make_current_fiber( fiber& new_fiber )
 {
-    curr.set_state(fs_dead);
-    fiber().switch_to(new_fiber);
+    // I don't why codes below causes crashes, we don't care about m_context of the temp fiber
+    // since it's not used, just used to call switch_to...
+    // fiber().switch_to(new_fiber);
+    jmp_buf tmp;
+    if (!setjmp(tmp))
+    {
+        longjmp(new_fiber.m_context, 0);
+    }
 }
-#endif
 
 // other members are not initialized, because they are not needed for a fiber which is created by convert_to_fiber
 fiber::fiber()
     : m_free_stack(false)
-    , m_state(fs_convert_from_thread | fs_running)
     , m_chainee(0)
 {
 }
@@ -95,6 +82,7 @@ void fiber::init(fiber_callback entry, void* arg, char* stack, std::size_t stack
     assert(entry);
     m_entry = entry;
     m_userarg = arg;
+    m_chainee = 0;
 
     if (!stack)
     {
@@ -111,31 +99,10 @@ void fiber::init(fiber_callback entry, void* arg, char* stack, std::size_t stack
     const size_t stack_alignment = 16;
     // round down to the pointer boundary
     m_stack_top = reinterpret_cast<char*>(reinterpret_cast<size_t>(m_stack_bottom + stack_size) & ~(stack_alignment - 1));
-    m_stack_size = stack_size;
-    m_state = fs_not_run;
-}
 
-bool fiber::is_convert_from_thread() const
-{
-    return (m_state & fs_convert_from_thread) != 0;
+    // init the environment of us
+    init_env(*this);
 }
-
-void fiber::set_convert_from_thread( bool flag )
-{
-    m_state |= flag ? fs_convert_from_thread : 0;
-}
-
-void fiber::set_state( state new_state )
-{
-    m_state &= ~fs_state_mask;
-    m_state |= new_state;
-}
-
-fiber::state fiber::get_state() const
-{
-    return static_cast<state>(m_state & fs_state_mask);
-}
-
 
 //----------------------------------------------------------------//
 // C API for fiber
@@ -166,12 +133,10 @@ fiber_t convert_to_fiber()
     return fiber::convert_to_fiber();
 }
 
-#ifdef ENABLE_MAKE_CURRENT_FIBER
-void make_current_fiber(fiber_t curr, fiber_t handle)
+void make_current_fiber( fiber_t handle)
 {
-    fiber::make_current_fiber(from_handle(curr), from_handle(handle));
+    fiber::make_current_fiber(from_handle(handle));
 }
-#endif
 
 void delete_fiber( fiber_t curr )
 {

@@ -5,19 +5,42 @@ void fiber::init_env(fiber& new_fiber)
 {
     char* stack_top = new_fiber.m_stack_top;
 #if defined(_MSC_VER)
-    __asm mov esp, stack_top
+    // setup the stack for the fiber
+    __asm
+    {
+        push ebx
+        mov ebx, esp
+        mov esp, stack_top
+    }
+
+    fiber_wrapper(&new_fiber);
+
+    // restore the stack for the old fiber
+    __asm
+    {
+        mov esp, ebx
+        pop ebx
+    }
 #elif defined(__GNUC__)
-    asm ("movl %0, %%esp"
+    // setup the stack for the fiber
+    asm (
+        "movl %%esp, %%ebx;"
+        "movl %0, %%esp;"
         :: "r"(stack_top)
+        : "ebx"
         );
+
+    fiber_wrapper(&new_fiber);
+
+    // restore the stack for the old fiber
+    asm ("movl %ebx, %esp;");
 #else
 #  error Unsupported compiler
 #endif
 
-    fiber_wrapper(&new_fiber);
 }
 
-void fiber::exit_current_fiber()
+void fiber::exit_fiber()
 {
     ExitThread(0);
 }
