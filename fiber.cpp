@@ -1,6 +1,5 @@
 #include "fiber.h"
 #include "fiber.hpp"
-#include <cstring>
 #include <cassert>
 
 using namespace std;

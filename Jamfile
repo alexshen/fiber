@@ -1,3 +1,7 @@
+ALL_LOCATE_TARGET = temp ;
+
+SubDir Fiber ;
+
 SubDirC++Flags -D_X86_ ;
 
 SRCS = fiber.cpp main.cpp ;
