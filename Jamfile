@@ -3,15 +3,17 @@ ALL_LOCATE_TARGET = temp ;
 SubDir Fiber ;
 
 SRCS = fiber.cpp main.cpp ;
-if $(UNIX) || $(CYGWIN)
+if $(UNIX)
 {
     CC   = g++ ;
     C++  = $(CC) ;
     LINK = $(CC) ;
 }
-if $(NT) || $(CYGWIN)
+if $(NT)
 {
-    SRCS += fiber_impl_win32.cpp ;
+    SRCS += fiber_impl_win32.cpp
+            fiber_context.cpp
+        ;
 }
 else if $(UNIX)
 {

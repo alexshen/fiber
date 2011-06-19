@@ -22,8 +22,9 @@ void fiber_make_context(fiber_context* context, fiber_entry entry, void* arg)
 
 }
 
-#pragma warning(push)
-#pragma warning(disable : 4731) // inline assembly modifies ebp
+#if defined(_MSC_VER)
+#  pragma warning(push)
+#  pragma warning(disable : 4731) // inline assembly modifies ebp
 void fiber_swap_context(fiber_context* oldcontext, fiber_context* newcontext)
 {
     assert(oldcontext && newcontext);
@@ -62,4 +63,49 @@ void fiber_set_context(fiber_context* context)
     }
 }
 
-#pragma warning(pop)
+#  pragma warning(pop)
+#elif defined(__GNUC__)
+void fiber_swap_context(fiber_context* oldcontext, fiber_context* newcontext)
+{
+    assert(oldcontext && newcontext);
+    // save the current context in the oldcontext
+    asm (
+        "pushl %%ebx;"
+        // save current stack pointer to oldcontext
+        "movl %0, %%ebx;"
+        "movl %%ebp, (%%ebx);"
+        "movl %%esp, 4(%%ebx);"
+        // save return address
+        "movl restore, %%eax;"
+        "movl %%eax, 8(%%ebx);"
+        // restore the enviroment for newcontext
+        "movl %1, %%ebx;"
+        "movl (%%ebx), %%ebp;"   // newcontext->ebp
+        "movl 4(%%ebx), %%esp;" // newcontext->esp
+        "pushl 8(%%ebx);"       // newcontext->eip
+        "ret;"
+        "restore:;"
+        "popl %%ebx;"
+        :: "r"(oldcontext), "r"(newcontext)
+        : "%eax"
+     );
+}
+
+void fiber_set_context(fiber_context* context)
+{
+    asm (
+        "pushl %%ebx;"
+        // restore the enviroment for newcontext
+        "movl %0, %%ebx;"
+        "movl (%%ebx), %%ebp;"   // context->ebp
+        "movl 4(%%ebx), %%esp;" // context->esp
+        "pushl 8(%%ebx);"       // context->eip
+        "ret;"
+        // should never return here
+        "popl %%ebx;"
+        :: "r"(context)
+    );
+}
+#else
+#  error Unsupported compiler
+#endif
