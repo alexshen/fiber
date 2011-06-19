@@ -25,6 +25,4 @@ if $(TEST_MODE)
 }
 
 Main fiber : $(SRCS) ;
-
-SEARCH on copy.cpp = $(SUBDIR) ;
-DEPENDS clean : copy.cpp ;
+Clean clean : copy.cpp ;

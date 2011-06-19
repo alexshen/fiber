@@ -32,7 +32,7 @@ void detail::fiber_trampoline( fiber* this_fiber )
 
 void fiber::switch_to(fiber& new_fiber)
 {
-    if (!setjmp(m_impl->m_context))
+    if (!setjmp(m_impl->context))
     {
         if (!(new_fiber.m_state & fiber_inited))
         {
@@ -57,11 +57,11 @@ void fiber::switch_to(fiber& new_fiber)
 #else
 #  error Unsupported compiler
 #endif
-            fiber_wrapper(&new_fiber);
+            detail::fiber_trampoline(&new_fiber);
         }
         else
         {
-            longjmp(new_fiber.m_impl->m_context, 0);
+            longjmp(new_fiber.m_impl->context, 0);
         }
     }
 }
@@ -71,5 +71,5 @@ void fiber::make_current_fiber( fiber& new_fiber )
     // I don't why codes below causes crashes, we don't care about m_context of the temp fiber
     // since it's not used, just used to call switch_to...
     // fiber().switch_to(new_fiber);
-    longjmp(new_fiber.m_impl->m_context, 0);
+    longjmp(new_fiber.m_impl->context, 0);
 }

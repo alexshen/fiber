@@ -178,11 +178,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\fiber_init_linux.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\fiber_init_win32.cpp"
+				RelativePath=".\fiber_impl_win32.cpp"
 				>
 			</File>
 			<File
