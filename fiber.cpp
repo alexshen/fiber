@@ -6,55 +6,21 @@ using namespace std;
 
 fiber::fiber(fiber_callback entry, void* arg, std::size_t stack_size /* = FIBER_DEFAULT_STACK_SIZE */)
 {
-    init(entry, arg, 0, stack_size);
+    init(entry, arg, 0, stack_size, fiber_free_stack);
 }
 
 fiber::fiber(fiber_callback entry, void* arg, char* stack, std::size_t stack_size /* = FIBER_DEFAULT_STACK_SIZE */)
 {
-    init(entry, arg, stack, stack_size);
+    init(entry, arg, stack, stack_size, fiber_invalid);
 }
 
 fiber::~fiber()
 {
     if (m_state & fiber_free_stack)
     {
-        delete[] m_stack_bottom;
+        delete[] m_stack;
     }
-}
-
-void fiber::switch_to(fiber& new_fiber)
-{
-    // save the current context
-    if (!setjmp(m_context))
-    {
-        if (new_fiber.m_state & fiber_invalid)
-        {
-            new_fiber.m_state &= ~fiber_invalid;
-            new_fiber.m_state |= fiber_inited;
-            init_env(new_fiber);
-        }
-        else
-        {
-            longjmp(new_fiber.m_context, 0);
-        }
-    }
-}
-
-void fiber::fiber_wrapper( fiber* this_fiber )
-{
-    this_fiber->m_entry(this_fiber->m_userarg);
-    if (this_fiber->m_chainee)
-    {
-        this_fiber->switch_to(*this_fiber->m_chainee);
-    }
-
-    // since the stack below is not correct, we can only exit the current thread.
-    exit_fiber();
-}
-
-void fiber::chain(fiber& chainee)
-{
-    m_chainee = &chainee;
+    destroy_impl(m_impl);
 }
 
 fiber* fiber::convert_to_fiber()
@@ -62,47 +28,35 @@ fiber* fiber::convert_to_fiber()
     return new fiber();
 }
 
-void fiber::make_current_fiber( fiber& new_fiber )
-{
-    // I don't why codes below causes crashes, we don't care about m_context of the temp fiber
-    // since it's not used, just used to call switch_to...
-    // fiber().switch_to(new_fiber);
-    jmp_buf tmp;
-    if (!setjmp(tmp))
-    {
-        longjmp(new_fiber.m_context, 0);
-    }
-}
-
-// other members are not initialized, because they are not needed for a fiber which is created by convert_to_fiber
 fiber::fiber()
-    : m_state(fiber_inited)
-    , m_chainee(0)
 {
+    init(0, 0, 0, 0, fiber_inited);
 }
 
-void fiber::init(fiber_callback entry, void* arg, char* stack, std::size_t stack_size)
+void fiber::chain(fiber& chainee)
 {
-    assert(entry);
+    m_chainee = &chainee;
+}
+
+void fiber::init(fiber_callback entry, void* arg, char* stack, std::size_t stack_size, int state)
+{
+    assert(entry && !(state & fiber_inited) || !entry && (state & fiber_inited));
     m_entry = entry;
     m_userarg = arg;
     m_chainee = 0;
 
     if (!stack)
     {
-        m_stack_bottom = new char[stack_size];
-        assert(m_stack_bottom);
-        m_state = fiber_free_stack | fiber_invalid;
+        m_stack = new char[stack_size];
+        assert(m_stack);
     }
     else
     {
-        m_stack_bottom = stack;
-        m_state = fiber_invalid;
+        m_stack = stack;
     }
-
-    const size_t stack_alignment = 16;
-    // round down to the pointer boundary
-    m_stack_top = reinterpret_cast<char*>(reinterpret_cast<size_t>(m_stack_bottom + stack_size) & ~(stack_alignment - 1));
+    m_state = state;
+    m_stack_size = stack_size;
+    m_impl = create_impl();
 }
 
 //----------------------------------------------------------------//

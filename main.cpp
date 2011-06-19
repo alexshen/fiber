@@ -3,7 +3,9 @@
 #define TEST_SWITCH_TO          2
 //#define TEST_MODE TEST_EXIT_FIBER
 //#define TEST_MODE TEST_SWITCH_TO
-#define TEST_MODE TEST_MAKE_CURRENT_FIBER
+#ifndef TEST_MODE
+#  define TEST_MODE TEST_MAKE_CURRENT_FIBER
+#endif
 
 #include "fiber.hpp"
 #include <cstdio>

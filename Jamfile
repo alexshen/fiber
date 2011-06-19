@@ -2,18 +2,29 @@ ALL_LOCATE_TARGET = temp ;
 
 SubDir Fiber ;
 
-SubDirC++Flags -D_X86_ ;
-
 SRCS = fiber.cpp main.cpp ;
+if $(UNIX) || $(CYGWIN)
+{
+    CC   = g++ ;
+    C++  = $(CC) ;
+    LINK = $(CC) ;
+}
 if $(NT) || $(CYGWIN)
 {
-    SRCS += fiber_init_win32.cpp ;
-    if $(CYGWIN)
-    {
-        CC   = g++ ;
-        C++  = $(CC) ;
-        LINK = $(CC) ;
-    }
+    SRCS += fiber_impl_win32.cpp ;
+}
+else if $(UNIX)
+{
+    SRCS += fiber_impl_linux.cpp ;
+    LINKFLAGS += -lpthread ;
+}
+
+if $(TEST_MODE)
+{
+    C++FLAGS += -D$(TEST_MODE) ;
 }
 
 Main fiber : $(SRCS) ;
+
+SEARCH on copy.cpp = $(SUBDIR) ;
+DEPENDS clean : copy.cpp ;
