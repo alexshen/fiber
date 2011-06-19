@@ -17,7 +17,13 @@ if $(NT)
 }
 else if $(UNIX)
 {
-    SRCS += fiber_impl_linux.cpp ;
+    SRCS += fiber_impl_linux.cpp
+            fiber_context.cpp
+        ;
+    if $(DEBUG)
+    {
+        C++FLAGS += -g ;
+    }
     LINKFLAGS += -lpthread ;
 }
 

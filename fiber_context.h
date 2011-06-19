@@ -11,9 +11,9 @@ typedef void (*fiber_entry)(void*);
 struct fiber_context
 {
     // registers
-    int ebp;
-    int esp;
-    int eip;
+    unsigned int ebp;
+    unsigned int esp;
+    unsigned int eip;
 
     char* stack;
     int   stack_size;

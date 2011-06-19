@@ -9,16 +9,16 @@ void fiber_make_context(fiber_context* context, fiber_entry entry, void* arg)
     // default alignment of the stack
     const int alignment = 16;
 
-    context->esp   = ((int)context->stack + context->stack_size) & ~(alignment - 1);
-    context->ebp   = context->esp;
-    context->eip   = (int)entry;
+    context->esp = ((unsigned int)context->stack + context->stack_size) & ~(alignment - 1);
+    context->ebp = context->esp;
+    context->eip = (unsigned int)entry;
     context->userarg = arg;
 
     // push the argument onto the stack
     char* top = (char*)context->esp;
     memcpy(top, &context->userarg, sizeof(void*));
     // make space for the pushed argument
-    context->esp  -= sizeof(void*);
+    context->esp -= sizeof(void*);
 
 }
 
@@ -70,22 +70,18 @@ void fiber_swap_context(fiber_context* oldcontext, fiber_context* newcontext)
     assert(oldcontext && newcontext);
     // save the current context in the oldcontext
     asm (
-        "pushl %%ebx;"
         // save current stack pointer to oldcontext
-        "movl %0, %%ebx;"
-        "movl %%ebp, (%%ebx);"
-        "movl %%esp, 4(%%ebx);"
+        "movl %%ebp, (%0);"
+        "movl %%esp, 4(%0);"
         // save return address
-        "movl restore, %%eax;"
-        "movl %%eax, 8(%%ebx);"
+        "movl $restore, %%eax;"
+        "movl %%eax, 8(%0);"
         // restore the enviroment for newcontext
-        "movl %1, %%ebx;"
-        "movl (%%ebx), %%ebp;"   // newcontext->ebp
-        "movl 4(%%ebx), %%esp;" // newcontext->esp
-        "pushl 8(%%ebx);"       // newcontext->eip
+        "movl (%1), %%ebp;"  // newcontext->ebp
+        "movl 4(%1), %%esp;" // newcontext->esp
+        "pushl 8(%1);"       // newcontext->eip
         "ret;"
         "restore:;"
-        "popl %%ebx;"
         :: "r"(oldcontext), "r"(newcontext)
         : "%eax"
      );
@@ -94,15 +90,12 @@ void fiber_swap_context(fiber_context* oldcontext, fiber_context* newcontext)
 void fiber_set_context(fiber_context* context)
 {
     asm (
-        "pushl %%ebx;"
         // restore the enviroment for newcontext
-        "movl %0, %%ebx;"
-        "movl (%%ebx), %%ebp;"   // context->ebp
-        "movl 4(%%ebx), %%esp;" // context->esp
-        "pushl 8(%%ebx);"       // context->eip
+        "movl (%0), %%ebp;"  // context->ebp
+        "movl 4(%0), %%esp;" // context->esp
+        "pushl 8(%0);"       // context->eip
         "ret;"
         // should never return here
-        "popl %%ebx;"
         :: "r"(context)
     );
 }
