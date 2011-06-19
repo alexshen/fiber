@@ -178,6 +178,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\fiber_context.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\fiber_impl_win32.cpp"
 				>
 			</File>
@@ -197,6 +201,10 @@
 			</File>
 			<File
 				RelativePath=".\fiber.hpp"
+				>
+			</File>
+			<File
+				RelativePath=".\fiber_context.h"
 				>
 			</File>
 		</Filter>

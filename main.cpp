@@ -10,6 +10,7 @@
 #include "fiber.hpp"
 #include <cstdio>
 #include <cstdlib>
+#include "fiber_context.h"
 
 using namespace std;
 
@@ -44,8 +45,25 @@ void chainee_fiber_callback(void*)
 #endif
 }
 
+fiber_context maincontext, context;
+void context_entry(void* arg)
+{
+    printf("%d\n", *(int*)arg);
+    printf("%s\n", __FUNCTION__);
+    fiber_swap_context(&context, &maincontext);
+    printf("%s\n", __FUNCTION__);
+    fiber_set_context(&maincontext);
+}
+
 int main()
 {
+    int arg = 10;
+    context.stack = new char[16 * 1024];
+    context.stack_size = 16 * 1024;
+    fiber_make_context(&context, context_entry, &arg);
+    fiber_swap_context(&maincontext, &context);
+    fiber_swap_context(&maincontext, &context);
+
     fpRead = fopen("main.cpp", "r");
     if (!fpRead) return EXIT_FAILURE;
     fpWrite = fopen("copy.cpp", "w+");
