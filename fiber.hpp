@@ -8,11 +8,16 @@
 /**
  * Exception must be turned off when using this class. since the exception chain will not be recovered after switching
  * You must not delete a running fiber.
- * If you're using MSCV, you need to turn of DEP in Linking options, otherwise crash.
  */
 
 class fiber
 {
+    enum
+    {
+        fiber_invalid    = 0x1,
+        fiber_inited     = 0x2,
+        fiber_free_stack = 0x4
+    };
 public:
     typedef void (*fiber_callback)(void*);
 
@@ -45,7 +50,7 @@ private:
     // stack is top-down
     char*          m_stack_bottom; // the bottom address of the stack
     char*          m_stack_top;    // the top address of the stack
-    bool           m_free_stack;
+    int            m_state;
 
     fiber_callback m_entry;
     void*          m_userarg;

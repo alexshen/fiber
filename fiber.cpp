@@ -16,7 +16,7 @@ fiber::fiber(fiber_callback entry, void* arg, char* stack, std::size_t stack_siz
 
 fiber::~fiber()
 {
-    if (m_free_stack)
+    if (m_state & fiber_free_stack)
     {
         delete[] m_stack_bottom;
     }
@@ -27,16 +27,21 @@ void fiber::switch_to(fiber& new_fiber)
     // save the current context
     if (!setjmp(m_context))
     {
-        longjmp(new_fiber.m_context, 0);
+        if (new_fiber.m_state & fiber_invalid)
+        {
+            new_fiber.m_state &= ~fiber_invalid;
+            new_fiber.m_state |= fiber_inited;
+            init_env(new_fiber);
+        }
+        else
+        {
+            longjmp(new_fiber.m_context, 0);
+        }
     }
 }
 
 void fiber::fiber_wrapper( fiber* this_fiber )
 {
-    // save the context and return
-    if (!setjmp(this_fiber->m_context))
-        return;
-
     this_fiber->m_entry(this_fiber->m_userarg);
     if (this_fiber->m_chainee)
     {
@@ -71,7 +76,7 @@ void fiber::make_current_fiber( fiber& new_fiber )
 
 // other members are not initialized, because they are not needed for a fiber which is created by convert_to_fiber
 fiber::fiber()
-    : m_free_stack(false)
+    : m_state(fiber_inited)
     , m_chainee(0)
 {
 }
@@ -87,20 +92,17 @@ void fiber::init(fiber_callback entry, void* arg, char* stack, std::size_t stack
     {
         m_stack_bottom = new char[stack_size];
         assert(m_stack_bottom);
-        m_free_stack = true;
+        m_state = fiber_free_stack | fiber_invalid;
     }
     else
     {
         m_stack_bottom = stack;
-        m_free_stack = false;
+        m_state = fiber_invalid;
     }
 
     const size_t stack_alignment = 16;
     // round down to the pointer boundary
     m_stack_top = reinterpret_cast<char*>(reinterpret_cast<size_t>(m_stack_bottom + stack_size) & ~(stack_alignment - 1));
-
-    // init the environment of us
-    init_env(*this);
 }
 
 //----------------------------------------------------------------//
