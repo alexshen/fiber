@@ -9,13 +9,13 @@ void fiber_make_context(fiber_context* context, fiber_entry entry, void* arg)
     // default alignment of the stack
     const int alignment = 16;
 
-    context->esp = ((unsigned int)context->stack + context->stack_size) & ~(alignment - 1);
+    context->esp = (reinterpret_cast<uintptr_t>(context->stack) + context->stack_size) & ~(alignment - 1);
     context->ebp = context->esp;
-    context->eip = (unsigned int)entry;
+    context->eip = reinterpret_cast<uintptr_t>(entry);
     context->userarg = arg;
 
     // push the argument onto the stack
-    char* top = (char*)context->esp;
+    char* top = reinterpret_cast<char*>(context->esp);
     memcpy(top, &context->userarg, sizeof(void*));
     // make space for the pushed argument
     context->esp -= sizeof(void*);

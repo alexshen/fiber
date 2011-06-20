@@ -1,6 +1,8 @@
 #ifndef FIBER_CONTEXT_H
 #define FIBER_CONTEXT_H
 
+#include "fiber_config.h"
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -11,9 +13,9 @@ typedef void (*fiber_entry)(void*);
 struct fiber_context
 {
     // registers
-    unsigned int ebp;
-    unsigned int esp;
-    unsigned int eip;
+    uintptr_t ebp;
+    uintptr_t esp;
+    uintptr_t eip;
 
     char* stack;
     int   stack_size;

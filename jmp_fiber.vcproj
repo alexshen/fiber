@@ -204,7 +204,15 @@
 				>
 			</File>
 			<File
+				RelativePath=".\fiber_config.h"
+				>
+			</File>
+			<File
 				RelativePath=".\fiber_context.h"
+				>
+			</File>
+			<File
+				RelativePath=".\stdint.h"
 				>
 			</File>
 		</Filter>
