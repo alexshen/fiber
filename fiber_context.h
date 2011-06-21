@@ -12,16 +12,33 @@ typedef void (*fiber_entry)(void*);
 
 struct fiber_context
 {
+#ifdef FIBER_X86
     // registers
     uintptr_t ebp;
     uintptr_t esp;
     uintptr_t eip;
+    // general purpose registers
+    uintptr_t eax;
+    uintptr_t ebx;
+    uintptr_t ecx;
+    uintptr_t edx;
+    uintptr_t esi;
+    uintptr_t edi;
+    uintptr_t efl; // what is this ?
+#else
+#  error Unsupported platform
+#endif
 
     char* stack;
     int   stack_size;
     void* userarg;
 };
 
+#ifdef __GUNC__
+void fiber_get_context(fiber_context* context) __attribute__((naked));
+#else
+void fiber_get_context(fiber_context* context);
+#endif
 void fiber_make_context(fiber_context* context, fiber_entry entry, void* arg);
 void fiber_swap_context(fiber_context* oldcontext, fiber_context* newcontext);
 void fiber_set_context(fiber_context* context);

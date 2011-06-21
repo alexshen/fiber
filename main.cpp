@@ -45,6 +45,8 @@ void chainee_fiber_callback(void*)
 #endif
 }
 
+bool returnFromContext;
+fiber_context context1;
 fiber_context maincontext, context;
 void context_entry(void* arg)
 {
@@ -52,7 +54,8 @@ void context_entry(void* arg)
     printf("%s\n", __FUNCTION__);
     fiber_swap_context(&context, &maincontext);
     printf("%s\n", __FUNCTION__);
-    fiber_set_context(&maincontext);
+    returnFromContext = true;
+    fiber_set_context(&context1);
 }
 
 int main()
@@ -60,9 +63,17 @@ int main()
     int arg = 10;
     context.stack = new char[16 * 1024];
     context.stack_size = 16 * 1024;
-    fiber_make_context(&context, context_entry, &arg);
-    fiber_swap_context(&maincontext, &context);
-    fiber_swap_context(&maincontext, &context);
+    fiber_get_context(&context1);
+    if (!returnFromContext)
+    {
+        fiber_make_context(&context, context_entry, &arg);
+        fiber_swap_context(&maincontext, &context);
+        fiber_swap_context(&maincontext, &context);
+    }
+    else
+    {
+        printf("return from context\n");
+    }
 
     fpRead = fopen("main.cpp", "r");
     if (!fpRead) return EXIT_FAILURE;

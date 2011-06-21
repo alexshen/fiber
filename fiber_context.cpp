@@ -3,6 +3,7 @@
 #include <cstring>
 using namespace std;
 
+#if defined(FIBER_X86)
 void fiber_make_context(fiber_context* context, fiber_entry entry, void* arg)
 {
     assert(context && entry);
@@ -19,12 +20,33 @@ void fiber_make_context(fiber_context* context, fiber_entry entry, void* arg)
     memcpy(top, &context->userarg, sizeof(void*));
     // make space for the pushed argument
     context->esp -= sizeof(void*);
-
 }
 
 #if defined(_MSC_VER)
-#  pragma warning(push)
-#  pragma warning(disable : 4731) // inline assembly modifies ebp
+__declspec(naked) void fiber_get_context(fiber_context* context)
+{
+    // TODO: how much space need to reserve for assert ?
+    //assert(context);
+    // save the current context in `context' and return
+    __asm {
+        push eax
+        push ebx
+        ; save current stack pointer to context
+        mov ebx, [esp + 0xc] ; fixup, point to the argument
+        mov dword ptr [ebx + 0x0], ebp ; context->ebp
+        mov eax, esp
+        add eax, 0x10 ; fixup esp, ignore ebx, eax, return address, arguments
+        mov dword ptr [ebx + 0x4], eax ; context->esp
+        mov eax, [esp + 0x8]
+        mov dword ptr [ebx + 0x8], eax ; context->eip
+        pop ebx
+        pop eax
+        ret
+    }
+}
+
+#pragma warning(push)
+#pragma warning(disable : 4731) // inline assembly modifies ebp
 void fiber_swap_context(fiber_context* oldcontext, fiber_context* newcontext)
 {
     assert(oldcontext && newcontext);
@@ -62,9 +84,31 @@ void fiber_set_context(fiber_context* context)
         pop ebx
     }
 }
+#pragma warning(pop)
 
-#  pragma warning(pop)
 #elif defined(__GNUC__)
+void fiber_get_context(fiber_context* context)
+{
+    // TODO: how much space need to reserve for assert ?
+    //assert(context);
+    // save the current context in `context' and return
+    asm (
+        "pushl %eax;"
+        "pushl %ebx;"
+        // save current stack pointer to context
+        "movl 0xc(%esp), %ebx;" // fixup, point to the argument
+        "movl %ebp, (%ebx);"    // context->ebp
+        "movl %esp, %eax;"
+        "addl $10, %eax;"  // fixup esp, ignore ebx, eax, return address, arguments
+        "movl %eax, 4(%ebx);" // context->esp
+        "movl 8(%esp), %eax;"
+        "movl %eax, 8(%ebx);" // context->eip
+        "popl %ebx;"
+        "popl %eax;"
+        "ret"
+    );
+}
+
 void fiber_swap_context(fiber_context* oldcontext, fiber_context* newcontext)
 {
     assert(oldcontext && newcontext);
@@ -102,3 +146,7 @@ void fiber_set_context(fiber_context* context)
 #else
 #  error Unsupported compiler
 #endif
+
+#else // !FIBER_X86
+#  error Unsupported platform
+#endif // FIBER_X86
