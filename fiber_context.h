@@ -24,7 +24,6 @@ struct fiber_context
     uintptr_t edx;
     uintptr_t esi;
     uintptr_t edi;
-    uintptr_t efl; // what is this ?
 #else
 #  error Unsupported platform
 #endif
@@ -34,7 +33,7 @@ struct fiber_context
     void* userarg;
 };
 
-#ifdef __GUNC__
+#ifdef __GNUC__
 void fiber_get_context(fiber_context* context) __attribute__((naked));
 #else
 void fiber_get_context(fiber_context* context);
