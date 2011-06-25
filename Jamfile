@@ -2,7 +2,6 @@ ALL_LOCATE_TARGET = temp ;
 
 SubDir Fiber ;
 
-SRCS = fiber.cpp main.cpp ;
 if $(UNIX)
 {
     CC   = g++ ;
@@ -10,17 +9,10 @@ if $(UNIX)
     LINK = $(CC) ;
 }
 
-if $(NT) || $(CYGWIN)
+if $(UNIX)
 {
-    SRCS += fiber_impl_win32.cpp
-            fiber_context.cpp
-        ;
-}
-else if $(UNIX)
-{
-    SRCS += fiber_impl_linux.cpp
-            fiber_context.cpp
-        ;
+    C++FLAGS += [ FDefines FIBER_X86 ] [ FIncludes "include" - ] ;
+    HDRS += "include" ;
     if $(DEBUG)
     {
         C++FLAGS += -g ;
@@ -28,10 +20,5 @@ else if $(UNIX)
     LINKFLAGS += -lpthread ;
 }
 
-if $(TEST_MODE)
-{
-    C++FLAGS += -D$(TEST_MODE) ;
-}
-
-Main fiber : $(SRCS) ;
-Clean clean : copy.cpp ;
+SubInclude Fiber src ;
+SubInclude Fiber examples ;

@@ -11,7 +11,7 @@ void context_entry(void* arg)
 {
     printf("%d\n", *(int*)arg);
     printf("%s\n", __FUNCTION__);
-    fiber_swap_context(&context, &maincontext);
+    fiber_swap_context(&context, &maincontext2);
     printf("%s\n", __FUNCTION__);
     returnFromContext = true;
     fiber_set_context(&maincontext1);

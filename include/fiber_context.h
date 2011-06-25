@@ -33,11 +33,7 @@ struct fiber_context
     void* userarg;
 };
 
-#ifdef __GNUC__
-void fiber_get_context(fiber_context* context) __attribute__((naked));
-#else
 void fiber_get_context(fiber_context* context);
-#endif
 void fiber_make_context(fiber_context* context, fiber_entry entry, void* arg);
 void fiber_swap_context(fiber_context* oldcontext, fiber_context* newcontext);
 void fiber_set_context(fiber_context* context);

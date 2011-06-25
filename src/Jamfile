@@ -1,0 +1,11 @@
+SubDir Fiber src ;
+
+NOARSCAN = 1 ;
+
+local SRCS = fiber.cpp
+             fiber_context.cpp
+             fiber_impl_linux.cpp ;
+
+local libName = lib/fiber ;
+Library $(libName) : $(SRCS) ;
+#Clean clean : $(libName) ;

@@ -1,0 +1,15 @@
+SubDir Fiber examples ;
+
+if $(TEST_MODE)
+{
+    SubDirC++Flags [ FDefines $(TEST_MODE) ] ;
+}
+
+local SRCS1 = fiber_context_test.cpp ;
+local SRCS2 = fiber_test.cpp ;
+
+Main bin/fiber_context_test : $(SRCS1) ;
+LinkLibraries bin/fiber_context_test : fiber ;
+
+Main bin/fiber_test : $(SRC2) ;
+LinkLibraries bin/fiber_test : fiber ;
