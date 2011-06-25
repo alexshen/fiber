@@ -10,6 +10,9 @@
 #include "fiber.hpp"
 #include <cstdio>
 #include <cstdlib>
+#ifdef WIN32
+#  include <io.h>
+#endif
 
 using namespace std;
 
@@ -44,11 +47,12 @@ void chainee_fiber_callback(void*)
 #endif
 }
 
+#pragma warning(disable: 4996)
 int main()
 {
     fpRead = fopen("../examples/fiber_test.cpp", "r");
     if (!fpRead) return EXIT_FAILURE;
-    fpWrite = fopen("/tmp/fiber_test_copy.cpp", "w+");
+    fpWrite = fopen(tempnam(0, 0), "w+");
     if (!fpWrite) return EXIT_FAILURE;
 
     main_fiber = fiber::convert_to_fiber();

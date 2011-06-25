@@ -98,7 +98,7 @@ void fiber_set_context(fiber_context* context)
         mov esi, dword ptr [ebx + 0x18] ; context->esi
         mov edi, dword ptr [ebx + 0x20] ; context->edi
         push dword ptr [ebx + 0x8]      ; context->eip
-        mov ebx, dwrod ptr [ebx + 0x10] ; context->ebx
+        mov ebx, dword ptr [ebx + 0x10] ; context->ebx
         ret
         ; should never return here
     }
