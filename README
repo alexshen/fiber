@@ -1,0 +1,17 @@
+Readme
+    This is a simple fiber implmentation for demonstration.
+    You should not used in any seriouse programs since there might be bugs
+    in the current implementaton.
+
+Build
+  1. Unix
+     To build the project and the examples, you need to have ftjam installed.
+
+  2. Windows
+     For windows users, a visual studio 9 solution is included.
+
+Author
+    Alex Shen <swlsww@hotmail.com>
+
+Date
+    2011.6.25
