@@ -17,11 +17,9 @@ struct fiber_context
     uintptr_t ebp;
     uintptr_t esp;
     uintptr_t eip;
-    // general purpose registers
-    uintptr_t eax;
+    // callee-save general-purpose registers
+    // see http://www.agner.org/optimize/calling_conventions.pdf
     uintptr_t ebx;
-    uintptr_t ecx;
-    uintptr_t edx;
     uintptr_t esi;
     uintptr_t edi;
 #else

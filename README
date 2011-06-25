@@ -1,11 +1,16 @@
 Readme
-    This is a simple fiber implmentation for demonstration.
-    You should not used in any seriouse programs since there might be bugs
-    in the current implementaton.
+    This is a simple fiber implmentation for demonstration purpose.
+    You should not used it in any seriouse programs since there might be bugs
+    in the current implementaton unless you know what's going on.
 
 Build
   1. Unix
      To build the project and the examples, you need to have ftjam installed.
+     Then in the root directory of the project, run
+        $ jam
+
+     To build the debug library, run
+        $ jam -sDEBUG=1
 
   2. Windows
      For windows users, a visual studio 9 solution is included.

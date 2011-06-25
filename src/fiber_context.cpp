@@ -21,10 +21,8 @@ void fiber_make_context(fiber_context* context, fiber_entry entry, void* arg)
     // make space for the pushed argument
     context->esp -= sizeof(void*);
 
-    // clear all general purpose registers
-    context->eax = context->ebx = context->ecx
-                 = context->edx = context->esi
-                 = context->edi = 0;
+    // clear all callee-save general purpose registers
+    context->ebx = context->esi = context->edi = 0;
 }
 
 #if defined(_MSC_VER)
@@ -35,28 +33,19 @@ __declspec(naked) void fiber_get_context(fiber_context* context)
     //assert(context);
     // save the current context in `context' and return
     __asm {
-        push eax
-        push ebx
         // save current stack pointer to context
-        mov ebx, [esp + 0xc] ; fixup, point to the argument, ignore ebx, eax
-        mov dword ptr [ebx], ebp ; context->ebp
+        mov ecx, dword ptr [esp + 0x4] ; fixup, point to the argument, ignore return address
+        mov dword ptr [ecx], ebp ; context->ebp
         mov eax, esp
-        // fixup esp, ignore ebx, eax, return address, as the eip is set to the caller's address
-        add eax, 0xc 
-        mov dword ptr [ebx + 0x4], eax ; context->esp
-        mov eax, [esp + 0x8]
-        mov dword ptr [ebx + 0x8], eax ; context->eip
-        // save general-purpose registers
-        mov eax, dword ptr [esp + 0x4]
-        mov dword ptr [ebx + 0xc], eax ; context->eax
+        // fixup esp, ignore return address, as the eip is set to the caller's address
+        add eax, 0x4
+        mov dword ptr [ecx + 0x4], eax ; context->esp
         mov eax, dword ptr [esp]
-        mov dword ptr [ebx + 0x10], eax; context->ebx
-        mov dword ptr [ebx + 0x14], ecx; context->ecx
-        mov dword ptr [ebx + 0x18], edx; context->edx
-        mov dword ptr [ebx + 0x1c], esi; context->esi
-        mov dword ptr [ebx + 0x20], edi; context->edi
-        pop ebx
-        pop eax
+        mov dword ptr [ecx + 0x8], eax ; context->eip
+        // save callee-save general-purpose registers
+        mov dword ptr [ecx + 0xc],  ebx; context->ebx
+        mov dword ptr [ecx + 0x10], esi; context->esi
+        mov dword ptr [ecx + 0x14], edi; context->edi
         ret
     }
 }
@@ -71,12 +60,10 @@ void fiber_swap_context(fiber_context* oldcontext, fiber_context* newcontext)
         push oldcontext
         call fiber_get_context
         // fixup oldcontext->esp, ignore pushed arguments, since we'll resume from restore
-        push eax
         mov eax, oldcontext
         add dword ptr[eax + 0x4], 0x4
         // fixup return address
         mov dword ptr[eax + 0x8], offset restore
-        pop eax
         // switch to newcontext
         push newcontext
         call fiber_set_context
@@ -88,17 +75,14 @@ void fiber_set_context(fiber_context* context)
 {
     __asm {
         ; restore the enviroment for context
-        mov ebx, context
-        mov ebp, dword ptr [ebx]        ; context->ebp
-        mov esp, dword ptr [ebx + 0x4]  ; context->esp
-        ; restore general-purpose registers
-        mov eax, dword ptr [ebx + 0xc]  ; context->eax
-        mov ecx, dword ptr [ebx + 0x10] ; context->ecx
-        mov edx, dword ptr [ebx + 0x14] ; context->edx
-        mov esi, dword ptr [ebx + 0x18] ; context->esi
-        mov edi, dword ptr [ebx + 0x20] ; context->edi
-        push dword ptr [ebx + 0x8]      ; context->eip
-        mov ebx, dword ptr [ebx + 0x10] ; context->ebx
+        mov eax, context
+        mov ebp, dword ptr [eax]        ; context->ebp
+        mov esp, dword ptr [eax + 0x4]  ; context->esp
+        ; restore callee-save general-purpose registers
+        mov ebx, dword ptr [eax + 0xc]  ; context->ebx
+        mov esi, dword ptr [eax + 0x10] ; context->esi
+        mov edi, dword ptr [eax + 0x14] ; context->edi
+        push dword ptr [eax + 0x8]      ; context->eip
         ret
         ; should never return here
     }
@@ -113,13 +97,11 @@ void fiber_swap_context(fiber_context* oldcontext, fiber_context* newcontext)
     asm (
         "pushl %0;"
         "call fiber_get_context;"
+        "mov %0, %%eax;"
         // fixup oldcontext->esp, ignore pushed arguments, since we'll resume from restore
-        "pushl %%eax;"
-        "movl %0, %%eax;"
-        "addl $4, 0x4(%%eax);"
+        "addl $0x4, 0x4(%%eax);"
         // fixup return address
         "movl $restore, 0x8(%%eax);"
-        "popl %%eax;"
         // switch to newcontext
         "pushl %1;"
         "call fiber_set_context;"
@@ -132,19 +114,15 @@ void fiber_set_context(fiber_context* context)
 {
     asm (
         // restore the enviroment for newcontext
-        "movl          %0, %%ebx;"
-        "movl     (%%ebx), %%ebp;" // context->ebp
-        "movl  0x4(%%ebx), %%esp;" // context->esp
-        "movl  0xc(%%ebx), %%eax;" // context->eax
-        "movl 0x10(%%ebx), %%ecx;" // context->ecx
-        "movl 0x14(%%ebx), %%edx;" // context->edx
-        "movl 0x18(%%ebx), %%esi;" // context->esi
-        "movl 0x20(%%ebx), %%edi;" // context->edi
-        "pushl 0x8(%%ebx);"        // context->eip
-        "movl 0x10(%%ebx), %%ebx;" // context->ebx
+        "movl     (%0), %%ebp;" // context->ebp
+        "movl  0x4(%0), %%esp;" // context->esp
+        "movl  0xc(%0), %%ebx;" // context->ebx
+        "movl 0x10(%0), %%esi;" // context->esi
+        "movl 0x14(%0), %%edi;" // context->edi
+        "pushl 0x8(%0);"        // context->eip
         "ret;"
         // should never return here
-        :: "m"(context)
+        :: "r"(context)
     );
 }
 #else
