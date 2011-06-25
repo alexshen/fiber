@@ -1,9 +1,9 @@
-Readme
+INTRODUCTION
     This is a simple fiber implmentation for demonstration purpose.
     You should not used it in any seriouse programs since there might be bugs
     in the current implementaton unless you know what's going on.
 
-Build
+BUILD
   1. Unix
      To build the project and the examples, you need to have ftjam installed.
      Then in the root directory of the project, run
@@ -15,8 +15,11 @@ Build
   2. Windows
      For windows users, a visual studio 9 solution is included.
 
-Author
+AUTHOR
     Alex Shen <swlsww@hotmail.com>
 
-Date
+DATE
     2011.6.25
+
+LICENSE
+    Distributed under boost licence 1.0, see accompaning LICENSE_1_0.txt.

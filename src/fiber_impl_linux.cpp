@@ -1,3 +1,10 @@
+//  @file fiber_impl_linux.cpp
+//  Fiber class linux implmentation using context api
+//
+//  Copyright 2011 Alex Shen. Distributed under the Boost
+//  Software License, Version 1.0. (See accompanying file
+//  LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+
 #include "fiber.hpp"
 #include <ucontext.h>
 #include <pthread.h>
