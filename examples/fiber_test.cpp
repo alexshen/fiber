@@ -46,9 +46,9 @@ void chainee_fiber_callback(void*)
 
 int main()
 {
-    fpRead = fopen("main.cpp", "r");
+    fpRead = fopen("../examples/fiber_test.cpp", "r");
     if (!fpRead) return EXIT_FAILURE;
-    fpWrite = fopen("copy.cpp", "w+");
+    fpWrite = fopen("/tmp/fiber_test_copy.cpp", "w+");
     if (!fpWrite) return EXIT_FAILURE;
 
     main_fiber = fiber::convert_to_fiber();

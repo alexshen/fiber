@@ -7,12 +7,13 @@ if $(UNIX)
     CC   = g++ ;
     C++  = $(CC) ;
     LINK = $(CC) ;
+    SUFLIB = .a ;
 }
 
 if $(UNIX)
 {
-    C++FLAGS += [ FDefines FIBER_X86 ] [ FIncludes "include" - ] ;
-    HDRS += "include" ;
+    C++FLAGS += [ FDefines FIBER_X86 ] -iquote "include" ;
+    #STDHDRS += /usr/include/c++/4.4.5 ;
     if $(DEBUG)
     {
         C++FLAGS += -g ;

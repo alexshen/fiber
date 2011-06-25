@@ -8,8 +8,12 @@ if $(TEST_MODE)
 local SRCS1 = fiber_context_test.cpp ;
 local SRCS2 = fiber_test.cpp ;
 
-Main bin/fiber_context_test : $(SRCS1) ;
-LinkLibraries bin/fiber_context_test : fiber ;
+Main fiber_context_test : $(SRCS1) ;
+MakeLocate fiber_context_test : bin ;
+LinkLibraries fiber_context_test : fiber ;
+Clean clean : fiber_context_test ;
 
-Main bin/fiber_test : $(SRC2) ;
-LinkLibraries bin/fiber_test : fiber ;
+Main fiber_test : $(SRCS2) ;
+MakeLocate fiber_test : bin ;
+LinkLibraries fiber_test : fiber ;
+Clean clean : fiber_test ;
